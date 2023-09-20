@@ -85,9 +85,15 @@ confluentinc/cp-zookeeper  7.3.2            6fe5551964f5   7 years ago     451MB
 docker volume create pgdata
 ```
 
-#### 4. Запустить БД, zookeeper и kafka 4-мя последовательными командами:
+#### 4. Запустить БД, zookeeper и kafka 3-мя последовательными командами:
 
-Для *nix:
+Запустив скрипт
+
+```posh
+Dmitriis-MacBook-Pro  niffler % bash localenv.sh
+```
+
+Или выполнив последовательно команды, для *nix:
 
 ```posh
 docker run --name niffler-all -p 5432:5432 -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql/data -d postgres:15.1
@@ -256,16 +262,26 @@ Dmitriis-MacBook-Pro  niffler % bash docker-compose-dev.sh
 ```posh
 Dmitriis-MacBook-Pro  niffler % bash docker-compose-dev.sh gql
 ```
-Текущая версия docker-compose-dev.sh удалит все старые Docker контейнеры в системе, поэтому если у вас есть созданные контейнеры для других проектов - отредактируйте строку ```posh docker rm $(docker ps -a -q)```, чтобы включить в grep только те контейнеры, что непосредственно относятся к niffler. 
 
-Niffler при запуске в докере будет работать для вас по адресу http://frontend.niffler.dc:80, этот порт НЕ НУЖНО указывать
+Текущая версия docker-compose-dev.sh удалит все старые Docker контейнеры в системе, поэтому если у вас есть созданные
+контейнеры для других проектов - отредактируйте строку ```posh docker rm $(docker ps -a -q)```, чтобы включить в grep
+только те контейнеры, что непосредственно относятся к niffler.
+
+Niffler при запуске в докере будет работать для вас по адресу http://frontend.niffler.dc:80, этот порт НЕ НУЖНО
+указывать
 в браузере, таким образом переходить напрямую по ссылке http://frontend.niffler.dc
-*ВАЖНО!* из docker-network Вам будут доступны только следующие порты:
 
-- порт 80 (все запросы с него перенаправляются nginx-ом на frontend)
-- порт 9000 (сервис niffler-auth)
-- порт 8090 (сервис niffler-gateway)
-- порт 5432 (бд niffler-all)
+Если при выполнении скрипта вы получили ошибку
+
+```
+* What went wrong:
+Execution failed for task ':niffler-auth:jibDockerBuild'.
+> com.google.cloud.tools.jib.plugins.common.BuildStepsExecutionException: 
+Build to Docker daemon failed, perhaps you should make sure your credentials for 'registry-1.docker.io...
+```
+
+То необходимо убедиться, что в `$USER/.docker/config.json` файле отсутствует запись `"credsStore": "desktop"`
+При наличии такого ключа в json, его надо удалить
 
 # Создание своего docker repository для форка Niffler и сборка своих докер контейнеров
 
@@ -281,25 +297,21 @@ Niffler при запуске в докере будет работать для
 
 Допустим, что ваш username на https://hub.docker.com - *foobazz*
 
-#### 2. заменить в проекте все имена image dtuchs/niffler на foobazz/niffler
+#### 2. заменить в файле docker.properties (в корне проекта) IMAGE_PREFIX=qaguru на IMAGE_PREFIX=foobazz
 
 - где foobazz - ваш юзернэйм на https://hub.docker.com/
 
-!К замене надо отнестись внимательно, вот список мест на текущий момент:!
+#### 3. заменить в файле build.gradle (в корне проекта) dockerHubName = "qaguru" на dockerHubName = "foobazz"
 
-- build.gradle всех сервисов Spring
-- docker-compose.yaml в корне проекта
-- docker-compose.test.yaml в корне проекта
-- docker.properties в модуле niffler-frontend
-- docker.properties в модуле niffler-frontend-gql
+- где foobazz - ваш юзернэйм на https://hub.docker.com/
 
-#### 3. Перейти в корневой каталог проекта
+#### 4. Перейти в корневой каталог проекта
 
 ```posh
 Dmitriis-MacBook-Pro niffler % cd niffler
 ```
 
-#### 4. Собрать все имеджи, запушить и запустить niffler одной командой, если необходим фронтенд GraphQL, то это указывается аргументом к скрипту:
+#### 5. Собрать все имеджи, запушить и запустить niffler одной командой, если необходим фронтенд GraphQL, то это указывается аргументом к скрипту:
 
 для REST:
 

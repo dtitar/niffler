@@ -5,18 +5,18 @@ services:
     container_name: niffler-all-db
     image: postgres:15.1
     environment:
-      - POSTGRES_USER=postgres
+      - POSTGRES_MULTIPLE_DATABASES="niffler-auth","niffler-currency","niffler-spend","niffler-userdata"
+      - PGUSER=postgres
       - POSTGRES_PASSWORD=secret
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD", "pg_isready" ]
       interval: 3s
       timeout: 3s
       retries: 5
-    expose:
-      - "5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: always
+    ports:
+      - "5432:5432"
     networks:
       - niffler-network
     dns_search: .
@@ -24,8 +24,8 @@ services:
   zookeeper:
     container_name: zookeeper
     image: confluentinc/cp-zookeeper:7.3.2
-    expose:
-      - "2181"
+    ports:
+      - "2181:2181"
     environment:
       - ZOOKEEPER_CLIENT_PORT=2181
       - ZOOKEEPER_TICK_TIME=2000
@@ -35,8 +35,8 @@ services:
   kafka:
     container_name: kafka
     image: confluentinc/cp-kafka:7.3.2
-    expose:
-      - "9092"
+    ports:
+      - "9092:9092"
     depends_on:
       zookeeper:
         condition: service_started
@@ -52,7 +52,7 @@ services:
 
   auth.niffler.dc:
     container_name: auth.niffler.dc
-    image: dtuchs/niffler-auth:latest
+    image: ${PREFIX}/niffler-auth:latest
     ports:
       - "9000:9000"
     healthcheck:
@@ -72,10 +72,10 @@ services:
 
   currency.niffler.dc:
     container_name: currency.niffler.dc
-    image: dtuchs/niffler-currency:latest
-    expose:
-      - "8091"
-      - "8092"
+    image: ${PREFIX}/niffler-currency:latest
+    ports:
+      - "8091:8091"
+      - "8092:8092"
     restart: always
     depends_on:
       niffler-all-db:
@@ -86,7 +86,7 @@ services:
 
   gateway.niffler.dc:
     container_name: gateway.niffler.dc
-    image: dtuchs/niffler-gateway:latest
+    image: ${PREFIX}/niffler-gateway:latest
     ports:
       - "8090:8090"
     healthcheck:
@@ -104,9 +104,9 @@ services:
 
   spend.niffler.dc:
     container_name: spend.niffler.dc
-    image: dtuchs/niffler-spend:latest
-    expose:
-      - "8093"
+    image: ${PREFIX}/niffler-spend:latest
+    ports:
+      - "8093:8093"
     restart: always
     depends_on:
       niffler-all-db:
@@ -117,9 +117,9 @@ services:
 
   userdata.niffler.dc:
     container_name: userdata.niffler.dc
-    image: dtuchs/niffler-userdata:latest
-    expose:
-      - "8089"
+    image: ${PREFIX}/niffler-userdata:latest
+    ports:
+      - "8089:8089"
     restart: always
     depends_on:
       auth.niffler.dc:
