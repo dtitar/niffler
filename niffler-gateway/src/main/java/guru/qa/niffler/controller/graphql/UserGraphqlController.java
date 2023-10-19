@@ -1,10 +1,14 @@
 package guru.qa.niffler.controller.graphql;
 
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.SelectedField;
+import guru.qa.niffler.ex.ToManySubQueriesException;
 import guru.qa.niffler.model.FriendJson;
 import guru.qa.niffler.model.UserJson;
 import guru.qa.niffler.model.graphql.UpdateUserInfoInput;
 import guru.qa.niffler.model.graphql.UserJsonGQL;
 import guru.qa.niffler.service.api.RestUserDataClient;
+import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -30,21 +34,31 @@ public class UserGraphqlController {
 
     @SchemaMapping(typeName = "User", field = "friends")
     public List<UserJsonGQL> getFriends(UserJsonGQL user) {
-        return getFriends(user.getUsername());
+        return getFriends(user.username());
     }
 
     @SchemaMapping(typeName = "User", field = "invitations")
     public List<UserJsonGQL> getInvitations(UserJsonGQL user) {
-        return getInvitations(user.getUsername());
+        return getInvitations(user.username());
     }
 
     @QueryMapping
-    public UserJsonGQL user(@AuthenticationPrincipal Jwt principal) {
+    public UserJsonGQL user(@AuthenticationPrincipal Jwt principal,
+                            @Nonnull DataFetchingEnvironment env) {
+        List<SelectedField> friendsSelectors = env.getSelectionSet().getFieldsGroupedByResultKey().get("friends");
+        List<SelectedField> invitationsSelectors = env.getSelectionSet().getFieldsGroupedByResultKey().get("invitations");
+        if (friendsSelectors != null && friendsSelectors.size() > 2) {
+            throw new ToManySubQueriesException("Can`t fetch over 2 friends sub-queries");
+        }
+        if (invitationsSelectors != null && invitationsSelectors.size() > 2) {
+            throw new ToManySubQueriesException("Can`t fetch over 2 invitations sub-queries");
+        }
+
         String username = principal.getClaim("sub");
         UserJson userJson = restUserDataClient.currentUser(username);
         UserJsonGQL userJsonGQL = UserJsonGQL.fromUserJson(userJson);
-        userJsonGQL.setFriends(getFriends(username));
-        userJsonGQL.setInvitations(getInvitations(username));
+        userJsonGQL.friends().addAll(getFriends(username));
+        userJsonGQL.invitations().addAll(getInvitations(username));
         return userJsonGQL;
     }
 
@@ -60,17 +74,22 @@ public class UserGraphqlController {
     public UserJsonGQL updateUser(@AuthenticationPrincipal Jwt principal,
                                   @Argument @Valid UpdateUserInfoInput input) {
         String username = principal.getClaim("sub");
-        UserJson user = UserJson.fromUpdateUserInfoInput(input);
-        user.setUsername(username);
-        return UserJsonGQL.fromUserJson(restUserDataClient.updateUserInfo(user));
+        return UserJsonGQL.fromUserJson(restUserDataClient.updateUserInfo(new UserJson(
+                null,
+                username,
+                input.firstname(),
+                input.surname(),
+                input.currency(),
+                input.photo(),
+                null
+        )));
     }
 
     @MutationMapping
     public UserJsonGQL addFriend(@AuthenticationPrincipal Jwt principal,
                                  @Argument String friendUsername) {
         String username = principal.getClaim("sub");
-        FriendJson friend = new FriendJson();
-        friend.setUsername(friendUsername);
+        FriendJson friend = new FriendJson(friendUsername);
         return UserJsonGQL.fromUserJson(restUserDataClient.addFriend(username, friend));
     }
 
@@ -78,8 +97,7 @@ public class UserGraphqlController {
     public UserJsonGQL acceptInvitation(@AuthenticationPrincipal Jwt principal,
                                         @Argument String friendUsername) {
         String username = principal.getClaim("sub");
-        FriendJson friend = new FriendJson();
-        friend.setUsername(friendUsername);
+        FriendJson friend = new FriendJson(friendUsername);
         return UserJsonGQL.fromUserJson(restUserDataClient.acceptInvitationAndReturnFriend(username, friend));
     }
 
@@ -87,12 +105,11 @@ public class UserGraphqlController {
     public UserJsonGQL declineInvitation(@AuthenticationPrincipal Jwt principal,
                                          @Argument String friendUsername) {
         String username = principal.getClaim("sub");
-        FriendJson friend = new FriendJson();
-        friend.setUsername(friendUsername);
+        FriendJson friend = new FriendJson(friendUsername);
         restUserDataClient.declineInvitation(username, friend);
         return UserJsonGQL.fromUserJson(restUserDataClient.allUsers(username)
                 .stream()
-                .filter(user -> user.getUsername().equals(friendUsername))
+                .filter(user -> user.username().equals(friendUsername))
                 .findFirst()
                 .orElseThrow());
     }
@@ -104,7 +121,7 @@ public class UserGraphqlController {
         restUserDataClient.removeFriend(username, friendUsername);
         return UserJsonGQL.fromUserJson(restUserDataClient.allUsers(username)
                 .stream()
-                .filter(user -> user.getUsername().equals(friendUsername))
+                .filter(user -> user.username().equals(friendUsername))
                 .findFirst()
                 .orElseThrow());
     }
