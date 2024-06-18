@@ -11,15 +11,6 @@ const apiClient = (token) => axios.create({
     }
 });
 
-const authClient = ({client, secret}) => axios.create({
-    baseURL: process.env.REACT_APP_AUTH_URL,
-    mode: "cors",
-    headers: {
-        'Content-type': 'application/json',
-        'Authorization': `Basic ${Buffer.from(`${client}:${secret}`).toString('base64')}`,
-    }
-});
-
 const getData = ({path, onSuccess, onFail, params}) => {
     const token = sessionStorage.getItem('id_token');
     apiClient(token).get(`${path}`, {params})
@@ -27,7 +18,7 @@ const getData = ({path, onSuccess, onFail, params}) => {
             if (res.status === 200) {
                 return res.data;
             } else {
-                throw new Error("Error while loading data!")
+                throw new Error("Error while loading data")
             }
         })
         .then(data => onSuccess(data))
@@ -55,7 +46,7 @@ const postData = ({path, data, onSuccess, onFail}) => {
             if (res.status === 200 || res.status === 201) {
                 return res.data;
             } else {
-                throw new Error("Entity not created!")
+                throw new Error("Entity not created")
             }
         })
         .then(data => onSuccess(data))
@@ -71,7 +62,7 @@ const patchData = ({path, data, onSuccess, onFail}) => {
             if (res.status === 200) {
                 return res.data;
             } else {
-                throw new Error("Unsuccessful editing!")
+                throw new Error("Unsuccessful editing")
             }
         })
         .then(data => onSuccess(data))
@@ -79,5 +70,38 @@ const patchData = ({path, data, onSuccess, onFail}) => {
             onFail(err);
         });
 };
+
+const AUTH_URL = `${process.env.REACT_APP_AUTH_URL}`;
+
+const authClient = {
+    getToken: async (url, data) => {
+        const response = await fetch(`${AUTH_URL}/${url}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-type": "application/x-www-form-urlencoded",
+                "Authorization": `Basic ${Buffer.from("client:secret").toString("base64")}`,
+            },
+            body: data.toString()
+        });
+        if (!response.ok) {
+            throw new Error("Failed loading data");
+        }
+        return response.json();
+    },
+    logout: async () => {
+        const response = await fetch(`${AUTH_URL}/logout`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("id_token")}`,
+            }
+        });
+        if (!response.ok) {
+            throw new Error("Failed logout");
+        }
+    }
+}
 
 export {apiClient, authClient, getData, postData, patchData, deleteData};

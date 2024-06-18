@@ -11,7 +11,7 @@ services:
     volumes:
       - ./postgres:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "postgres" ]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -28,7 +28,6 @@ services:
       - "2181:2181"
     environment:
       - ZOOKEEPER_CLIENT_PORT=2181
-      - ZOOKEEPER_TICK_TIME=2000
     networks:
       - niffler-network
 

@@ -1,11 +1,12 @@
 package guru.qa.niffler.test.gql;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import guru.qa.niffler.gql.GraphQLClient;
+import guru.qa.niffler.jupiter.annotation.ApiLogin;
 import guru.qa.niffler.jupiter.annotation.GenerateUser;
 import guru.qa.niffler.jupiter.annotation.GenerateUsers;
 import guru.qa.niffler.jupiter.annotation.GqlReq;
+import guru.qa.niffler.jupiter.annotation.Token;
 import guru.qa.niffler.jupiter.annotation.User;
+import guru.qa.niffler.model.gql.GqlRequest;
 import guru.qa.niffler.model.gql.UpdateUserDataGql;
 import guru.qa.niffler.model.gql.UserDataGql;
 import guru.qa.niffler.model.gql.UserGql;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static guru.qa.niffler.jupiter.annotation.User.Selector.METHOD;
 import static io.qameta.allure.Allure.step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,19 +30,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("[GraphQL][niffler-gateway]: Пользователи")
 public class GraphQlUsersTest extends BaseGraphQlTest {
 
-    private final GraphQLClient gqlClient = new GraphQLClient();
-
     @Test
     @DisplayName("GraphQL: Для нового пользователя должна возвращаться информация из niffler-gateway c дефолтными значениями")
     @AllureId("400001")
     @Tag("GraphQL")
-    @GenerateUser
-    void currentUserTest(@User(selector = METHOD) UserJson user,
-                         @GqlReq("gql/currentUserQuery.json") JsonNode query) throws Exception {
-        apiLogin(user.username(), user.testData().password());
-
-        UserDataGql currentUserResponse = gqlClient.currentUser(query);
-
+    @ApiLogin(user = @GenerateUser)
+    void currentUserInfoShouldReceived(@User UserJson user,
+                                       @Token String bearerToken,
+                                       @GqlReq("gql/currentUserQuery.json") GqlRequest query) throws Exception {
+        final UserDataGql currentUserResponse = gqlClient.currentUser(bearerToken, query);
         final UserGql userGql = currentUserResponse.getData().getUser();
 
         step("Check that response contains ID (GUID)", () ->
@@ -57,16 +53,14 @@ public class GraphQlUsersTest extends BaseGraphQlTest {
     }
 
     @Test
-    @DisplayName("GraphQL: При обновлении юзера должны сохраняться значения в niffler-gateway")
+    @DisplayName("GraphQL: При обновлении юзера должны сохраняться значения в niffler-userdata")
     @AllureId("400002")
     @Tag("GraphQL")
-    @GenerateUser()
-    void updateUserTest(@User(selector = METHOD) UserJson user,
-                        @GqlReq("gql/updateUserQuery.json") JsonNode query) throws Exception {
-        apiLogin(user.username(), user.testData().password());
-
-        UpdateUserDataGql updateUserResponse = gqlClient.updateUser(query);
-
+    @ApiLogin(user = @GenerateUser)
+    void updatedUserInfoShouldReceived(@User UserJson user,
+                                       @Token String bearerToken,
+                                       @GqlReq("gql/updateUserQuery.json") GqlRequest query) throws Exception {
+        final UpdateUserDataGql updateUserResponse = gqlClient.updateUser(bearerToken, query);
         final UserGql userGql = updateUserResponse.getData().getUpdateUser();
 
         step("Check that response contains ID (GUID)", () ->
@@ -90,17 +84,13 @@ public class GraphQlUsersTest extends BaseGraphQlTest {
     @DisplayName("GraphQL: Список всех пользователей системы не должен быть пустым")
     @AllureId("400003")
     @Tag("GraphQL")
+    @ApiLogin(user = @GenerateUser)
     @GenerateUsers({
-            @GenerateUser,
             @GenerateUser
     })
-    void allUsersTest(@User(selector = METHOD) UserJson[] users,
-                      @GqlReq("gql/usersQuery.json") JsonNode query) throws Exception {
-        final UserJson currentUser = users[0];
-        apiLogin(currentUser.username(), currentUser.testData().password());
-
-        UsersDataGql usersDataGql = gqlClient.allUsers(query);
-
+    void notEmptyUsersListShouldReceived(@Token String bearerToken,
+                                         @GqlReq("gql/usersQuery.json") GqlRequest query) throws Exception {
+        final UsersDataGql usersDataGql = gqlClient.allUsers(bearerToken, query);
         final List<UserGql> userGql = usersDataGql.getData().getUsers();
 
         step("Check that all users list is not empty", () ->

@@ -8,6 +8,7 @@ import guru.qa.niffler.jupiter.annotation.User;
 import guru.qa.niffler.model.rest.CurrencyValues;
 import guru.qa.niffler.model.rest.UserJson;
 import guru.qa.niffler.page.ProfilePage;
+import guru.qa.niffler.utils.SuccessMessage;
 import io.qameta.allure.AllureId;
 import io.qameta.allure.Epic;
 import org.junit.jupiter.api.DisplayName;
@@ -17,19 +18,18 @@ import org.junit.jupiter.api.Test;
 import static guru.qa.niffler.utils.DataUtils.generateNewCategory;
 import static guru.qa.niffler.utils.DataUtils.generateRandomName;
 import static guru.qa.niffler.utils.DataUtils.generateRandomSurname;
-import static guru.qa.niffler.utils.Error.CAN_NOT_ADD_CATEGORY;
+import static guru.qa.niffler.utils.ErrorMessage.CAN_NOT_ADD_CATEGORY;
+import static guru.qa.niffler.utils.SuccessMessage.PROFILE_UPDATED;
 
 @Epic("[WEB][niffler-frontend]: Профиль")
 @DisplayName("[WEB][niffler-frontend]: Профиль")
 public class ProfileTest extends BaseWebTest {
 
-    private static final String SUCCESS_MSG = "Profile successfully updated";
-
     @Test
     @AllureId("500004")
     @DisplayName("WEB: Пользователь может отредактировать все поля в профиле")
     @Tag("WEB")
-    @ApiLogin(nifflerUser = @GenerateUser)
+    @ApiLogin(user = @GenerateUser)
     void shouldUpdateProfileWithAllFieldsSet(@User UserJson user) {
         String newName = generateRandomName();
         String newSurname = generateRandomSurname();
@@ -40,7 +40,7 @@ public class ProfileTest extends BaseWebTest {
                 .setSurname(newSurname)
                 .setCurrency(CurrencyValues.EUR)
                 .submitProfile()
-                .checkToasterMessage(SUCCESS_MSG);
+                .checkToasterMessage(PROFILE_UPDATED.content);
 
         Selenide.refresh();
 
@@ -53,13 +53,13 @@ public class ProfileTest extends BaseWebTest {
     @AllureId("500005")
     @DisplayName("WEB: Пользователь может отредактировать профиль с заполнением только обязательных полей")
     @Tag("WEB")
-    @ApiLogin(nifflerUser = @GenerateUser)
+    @ApiLogin(user = @GenerateUser)
     void shouldUpdateProfileWithOnlyRequiredFields(@User UserJson user) {
         ProfilePage profilePage = Selenide.open(ProfilePage.URL, ProfilePage.class)
                 .waitForPageLoaded()
                 .setCurrency(CurrencyValues.KZT)
                 .submitProfile()
-                .checkToasterMessage(SUCCESS_MSG);
+                .checkToasterMessage(PROFILE_UPDATED.content);
 
         Selenide.refresh();
 
@@ -72,12 +72,13 @@ public class ProfileTest extends BaseWebTest {
     @AllureId("500006")
     @DisplayName("WEB: Пользователь имеет возможность добавить категорию трат")
     @Tag("WEB")
-    @ApiLogin(nifflerUser = @GenerateUser)
+    @ApiLogin(user = @GenerateUser)
     void shouldAddNewCategory(@User UserJson user) {
         String newCategory = generateNewCategory();
         ProfilePage profilePage = Selenide.open(ProfilePage.URL, ProfilePage.class)
                 .waitForPageLoaded()
-                .addCategory(newCategory);
+                .addCategory(newCategory)
+                .checkToasterMessage(SuccessMessage.CATEGORY_ADDED.content);
         Selenide.refresh();
         profilePage.checkCategoryExists(newCategory);
     }
@@ -86,7 +87,7 @@ public class ProfileTest extends BaseWebTest {
     @AllureId("500007")
     @DisplayName("WEB: Пользователь не имеет возможности добавить более 8 трат")
     @Tag("WEB")
-    @ApiLogin(nifflerUser = @GenerateUser(
+    @ApiLogin(user = @GenerateUser(
             categories = {
                     @GenerateCategory("Food"),
                     @GenerateCategory("Bars"),

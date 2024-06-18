@@ -1,7 +1,10 @@
 package guru.qa.niffler.config;
 
 import com.codeborne.selenide.Configuration;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.openqa.selenium.chrome.ChromeOptions;
+
+import static guru.qa.niffler.utils.UrlUtils.isValidURL;
 
 public class DockerConfig implements Config {
 
@@ -35,7 +38,7 @@ public class DockerConfig implements Config {
     }
 
     @Override
-    public String currencyGrpcAddress() {
+    public String currencyGrpcHost() {
         return "currency.niffler.dc";
     }
 
@@ -57,5 +60,18 @@ public class DockerConfig implements Config {
     @Override
     public String kafkaAddress() {
         return "kafka:9092";
+    }
+
+    @Override
+    public String allureDockerUrl() {
+        final String allureDockerApi = System.getenv("ALLURE_DOCKER_API");
+        return isValidURL(allureDockerApi)
+                ? allureDockerApi
+                : "http://allure:5050/";
+    }
+
+    @Override
+    public HttpLoggingInterceptor.Level restLoggingLevel() {
+        return HttpLoggingInterceptor.Level.NONE;
     }
 }

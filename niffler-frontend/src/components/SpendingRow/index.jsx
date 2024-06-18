@@ -21,14 +21,14 @@ export const SpendingRow = ({
     const handleDataSave = (evt) => {
         evt.preventDefault();
         patchData({
-            path: "/editSpend",
+            path: "/api/spends/edit",
             data: editableSpending,
             onSuccess: () => {
-                showSuccess("Spending updated!");
+                showSuccess("Spending successfully updated");
                 setIsGraphOutdated(!isGraphOutdated);
             },
             onFail: (err) => {
-                showError("Spending was not updated!");
+                showError("Spending was not updated");
                 console.log(err);
             },
         });

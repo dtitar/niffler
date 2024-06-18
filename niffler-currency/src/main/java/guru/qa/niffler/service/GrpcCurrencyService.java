@@ -13,6 +13,8 @@ import guru.qa.niffler.data.repository.CurrencyRepository;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.Nonnull;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ import java.util.List;
 
 @GrpcService
 public class GrpcCurrencyService extends NifflerCurrencyServiceGrpc.NifflerCurrencyServiceImplBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GrpcCurrencyService.class);
 
     private final CurrencyRepository currencyRepository;
 
@@ -33,15 +37,14 @@ public class GrpcCurrencyService extends NifflerCurrencyServiceGrpc.NifflerCurre
     @Transactional(readOnly = true)
     @Override
     public void getAllCurrencies(Empty request, StreamObserver<CurrencyResponse> responseObserver) {
-        List<CurrencyEntity> all = currencyRepository.findAll();
-
         CurrencyResponse response = CurrencyResponse.newBuilder()
-                .addAllAllCurrencies(all.stream().map(e -> Currency.newBuilder()
+                .addAllAllCurrencies(currencyRepository.findAll().stream()
+                        .map(e -> Currency.newBuilder()
                                 .setCurrency(CurrencyValues.valueOf(e.getCurrency().name()))
                                 .setCurrencyRate(e.getCurrencyRate())
-                                .build())
-                        .toList())
-                .build();
+                                .build()
+                        ).toList()
+                ).build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
@@ -72,7 +75,11 @@ public class GrpcCurrencyService extends NifflerCurrencyServiceGrpc.NifflerCurre
                 ? BigDecimal.valueOf(spend)
                 : BigDecimal.valueOf(spend).multiply(courseForCurrency(spendCurrency, currencyRates));
 
-        return spendInUsd.divide(courseForCurrency(desiredCurrency, currencyRates), 2, RoundingMode.HALF_UP);
+        return spendInUsd.divide(
+                courseForCurrency(desiredCurrency, currencyRates),
+                2,
+                RoundingMode.HALF_UP
+        );
     }
 
     private @Nonnull

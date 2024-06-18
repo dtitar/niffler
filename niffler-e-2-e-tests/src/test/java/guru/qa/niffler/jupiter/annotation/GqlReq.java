@@ -1,7 +1,7 @@
 package guru.qa.niffler.jupiter.annotation;
 
-import guru.qa.niffler.jupiter.extension.GqlReqResolver;
-import org.junit.jupiter.api.extension.ExtendWith;
+import guru.qa.niffler.jupiter.converter.GqlReqConverter;
+import org.junit.jupiter.params.converter.ConvertWith;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@ExtendWith(GqlReqResolver.class)
+@ConvertWith(GqlReqConverter.class)
 public @interface GqlReq {
-    String value();
+    String value() default ""; // for parametrized tests
 }

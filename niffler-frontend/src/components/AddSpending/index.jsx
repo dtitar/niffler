@@ -79,18 +79,22 @@ export const AddSpending = ({categories, addSpendingCallback}) => {
     const handleAddSpendingSubmit = (e) => {
         e.preventDefault();
         if (isFormValid()) {
-            const dataToSend = {...data, category: data.category?.value, currency: user?.currency};
+            const dataToSend = {
+                ...data,
+                category: data.category?.value,
+                currency: user?.currency
+            };
             postData({
-                path: "/addSpend",
+                path: "/api/spends/add",
                 data: dataToSend,
                 onSuccess: (data) => {
                     addSpendingCallback(data);
                     setData(initialSpendingState);
                     setFormErrors(initialErrorState);
-                    showSuccess("Spending successfully added!");
+                    showSuccess("Spending successfully added");
                 },
                 onFail: (err) => {
-                    showError("Can not add spending!");
+                    showError("Can not add spending");
                     console.error(err);
                 }
             });
