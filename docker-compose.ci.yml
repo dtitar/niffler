@@ -1,38 +1,10 @@
 version: '3.9'
 
 services:
-  zookeeper:
-    container_name: zookeeper
-    image: confluentinc/cp-zookeeper:7.3.2
-    ports:
-      - "2181:2181"
-    environment:
-      - ZOOKEEPER_CLIENT_PORT=2181
-      - ZOOKEEPER_TICK_TIME=2000
-    networks:
-      - niffler-network
-
-  kafka:
-    container_name: kafka
-    image: confluentinc/cp-kafka:7.3.2
-    ports:
-      - "9092:9092"
-    depends_on:
-      zookeeper:
-        condition: service_started
-    environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
-      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
-    networks:
-      - niffler-network
-
   auth.niffler.dc:
     container_name: auth.niffler.dc
     image: ${PREFIX}/niffler-auth-${PROFILE}:${AUTH_VER}
+    pull_policy: always
     environment:
       - VAULT_TOKEN=${VAULT_TOKEN}
     ports:
@@ -43,9 +15,6 @@ services:
       timeout: 5s
       retries: 10
     restart: always
-    depends_on:
-      kafka:
-        condition: service_started
     networks:
       - niffler-network
     dns_search: .
@@ -53,6 +22,7 @@ services:
   currency.niffler.dc:
     container_name: currency.niffler.dc
     image: ${PREFIX}/niffler-currency-${PROFILE}:${CURRENCY_VER}
+    pull_policy: always
     environment:
       - VAULT_TOKEN=${VAULT_TOKEN}
     ports:
@@ -66,6 +36,7 @@ services:
   gateway.niffler.dc:
     container_name: gateway.niffler.dc
     image: ${PREFIX}/niffler-gateway-${PROFILE}:${GATEWAY_VER}
+    pull_policy: always
     environment:
       - VAULT_TOKEN=${VAULT_TOKEN}
     ports:
@@ -86,6 +57,7 @@ services:
   spend.niffler.dc:
     container_name: spend.niffler.dc
     image: ${PREFIX}/niffler-spend-${PROFILE}:${SPEND_VER}
+    pull_policy: always
     environment:
       - VAULT_TOKEN=${VAULT_TOKEN}
     ports:
@@ -98,6 +70,7 @@ services:
   userdata.niffler.dc:
     container_name: userdata.niffler.dc
     image: ${PREFIX}/niffler-userdata-${PROFILE}:${USERDATA_VER}
+    pull_policy: always
     environment:
       - VAULT_TOKEN=${VAULT_TOKEN}
     ports:
@@ -113,6 +86,7 @@ services:
   frontend.niffler.dc:
     container_name: frontend.niffler.dc
     image: ${PREFIX}/${FRONT_IMAGE}-${PROFILE}:${FRONT_VER}
+    pull_policy: always
     ports:
       - "8000:80"
     restart: always

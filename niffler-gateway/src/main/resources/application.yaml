@@ -17,7 +17,8 @@ logging:
     net.devh.boot.grpc: DEBUG
 #    org.springframework.boot.autoconfigure: DEBUG
 
-niffler-userdata.client: soap
+niffler-userdata:
+  client: soap
 
 ---
 spring:
@@ -92,10 +93,10 @@ spring:
     vault:
       authentication: TOKEN
       host: vault.qa.guru
-      port: 443
-      scheme: https
-      uri: https://vault.qa.guru:443
+      uri: https://vault.qa.guru
       token: ${VAULT_TOKEN}
+      kv:
+        enabled: true
   security:
     oauth2:
       resourceserver:
@@ -126,10 +127,10 @@ spring:
     vault:
       authentication: TOKEN
       host: vault.qa.guru
-      port: 443
-      scheme: https
-      uri: https://vault.qa.guru:443
+      uri: https://vault.qa.guru
       token: ${VAULT_TOKEN}
+      kv:
+        enabled: true
   security:
     oauth2:
       resourceserver:
