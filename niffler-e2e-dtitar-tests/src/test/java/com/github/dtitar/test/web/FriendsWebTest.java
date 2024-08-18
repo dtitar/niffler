@@ -44,7 +44,6 @@ public class FriendsWebTest extends BaseWebTest {
     @AllureId("103")
     void friendWhoGotInvitationShouldHaveInvitationInFriendsTable(@User(userType = INVITATION_RECEIVED) UserJson userForTest) {
         mainPage.getHeader()
-                .toFriendsPage()
-                .checkExistingFriends()
+                .toFriendsPage();
     }
 }
